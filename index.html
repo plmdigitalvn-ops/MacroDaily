@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MacroDaily - Hệ thống Phân tích Vĩ mô Sáng & Tối</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- ChartJS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .bg-grid-pattern {
+            background-size: 30px 30px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        }
+        .indicator-pulse {
+            animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: .4; transform: scale(0.92); }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen bg-grid-pattern flex flex-col justify-between">
+
+    <!-- Top Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-amber-500 text-slate-950 p-2 rounded-lg font-bold flex items-center justify-center">
+                    <i class="fa-solid fa-chart-line text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                        MacroDaily <span class="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/30">VIP 10指标</span>
+                    </h1>
+                    <p class="text-[10px] text-slate-400">Hệ thống giám sát vĩ mô bề chìm tự động</p>
+                </div>
+            </div>
+
+            <!-- Time Indicator & Quick Actions -->
+            <div class="flex items-center gap-4">
+                <div class="hidden md:flex flex-col items-end text-right">
+                    <span class="text-xs text-slate-400 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 indicator-pulse"></span>
+                        Cập nhật tự động: <strong class="text-white">08:30 Sáng & 20:30 Tối</strong>
+                    </span>
+                    <span id="current-simulation-time" class="text-[11px] text-amber-400 font-medium">Bản tin: Sáng Hôm Nay (25/05/2026)</span>
+                </div>
+                
+                <!-- Manual Update Simulation Selector -->
+                <div class="bg-slate-800 p-1.5 rounded-xl border border-slate-700 flex gap-1">
+                    <button onclick="switchSession('morning')" id="btn-morning" class="px-3 py-1 text-xs font-semibold rounded-lg bg-amber-500 text-slate-950 transition-all flex items-center gap-1">
+                        <i class="fa-solid fa-sun text-[11px]"></i> Sáng (08:30)
+                    </button>
+                    <button onclick="switchSession('evening')" id="btn-evening" class="px-3 py-1 text-xs font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-all flex items-center gap-1">
+                        <i class="fa-solid fa-moon text-[11px]"></i> Tối (20:30)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
+        
+        <!-- Welcome Banner & System Status -->
+        <div class="bg-gradient-to-r from-amber-500/10 via-red-500/5 to-transparent border border-amber-500/20 rounded-2xl p-4 sm:p-6 mb-8 relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 text-amber-500/5 text-9xl font-extrabold select-none">
+                VIP
+            </div>
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 z-10 relative">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-red-500/20 text-red-400 text-[10px] font-bold uppercase rounded tracking-wider border border-red-500/30">Cảnh báo vĩ mô</span>
+                        <h2 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Hát Karaoke Trong Căn Nhà Rò Khí</h2>
+                    </div>
+                    <p class="text-slate-300 text-sm max-w-3xl">
+                        Bề mặt tài chính có vẻ bình lặng (<span class="text-emerald-400 font-semibold">VIX 16.7 - 17.4</span>), nhưng các dòng chảy thanh khoản ngầm (Reverse Repo cạn kiệt, tỷ lệ Đồng/Vàng chạm đáy 50 năm) đang rạn nứt nghiêm trọng.
+                    </p>
+                </div>
+                <div class="flex items-center gap-3 shrink-0">
+                    <button onclick="openAIAnalysisModal()" class="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold text-sm px-5 py-3 rounded-xl transition-all shadow-lg shadow-amber-500/10 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI Chẩn Đoán Vĩ Mô (Gemini)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metric Cards Grid (10 Core Indicators) -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group text-amber-500"></i>
+                    <h3 class="font-bold text-lg text-white">Trạng Thái 10 Chỉ Số Sức Khỏe Hệ Thống</h3>
+                </div>
+                <span id="de-risk-ratio" class="text-sm bg-red-500/15 text-red-400 border border-red-500/25 px-3 py-1 rounded-full font-semibold">
+                    5/10 Chỉ số Phát Tín Hiệu DE-RISK
+                </span>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <!-- VIX (Surface Volatility) -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 hover:border-slate-700 transition-all">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs text-slate-400 font-medium">1. VIX Index</span>
+                        <span class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] rounded border border-emerald-500/20">Bình an</span>
+                    </div>
+                    <div class="flex items-baseline gap-1.5">
+                        <span id="val-vix" class="text-xl font-bold text-white">16.70</span>
+                        <span id="change-vix" class="text-[10px] text-emerald-400"><i class="fa-solid fa-arrow-down"></i> 4.2%</span>
+                    </div>
+                    <p class="text-[10px] text-slate-500 mt-1">Yên lặng cực đoan trước bão</p>
+                </div>
+
+                <!-- MOVE Index (Treasury Volatility) -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 hover:border-slate-700 transition-all">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs text-slate-400 font-medium">2. MOVE Index</span>
+                        <span class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] rounded border border-emerald-500/20">Bình lặng</span>
+                    </div>
+                    <div class="flex items-baseline gap-1.5">
+                        <span id="val-move" class="text-xl font-bold text-white">78.00</span>
+                        <span id="change-move" class="text-[10px] text-slate-400">0.0%</span>
+                    </div>
+                    <p class="text-[10px] text-slate-500 mt-1">Trái phiếu bình lặng như hồ gương</p>
+                </div>
+
+                <!-- CDX HY Spread -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 hover:border-slate-700 transition-all">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs text-slate-400 font-medium">3. CDX HY Spread</span>
+                        <span class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] rounded border border-emerald-500/20">Thấp</span>
+                    </div>
+                    <div class="flex items-baseline gap-1.5">
+                        <span id="val-cdx" class="text-xl font-bold text-white">285 bps</span>
+                        <span id="change-cdx" class="text-[10px] text-emerald-400"><i class="fa-solid fa-arrow-down"></i> 5bps</span>
+                    </div>
+                    <p class="text-[10px] text-slate-500 mt-1">Đám đông không sợ rủi ro vỡ nợ</p>
+                </div>
+
+                <!-- DXY Index -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 hover:border-slate-700 transition-all">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs text-slate-400 font-medium">4. DXY Index</span>
+                        <span class="px-1.5 py-0.5 bg-amber-500/10 text-amber-400 text-[10px] rounded border border-amber-500/20">Nén lực</span>
+                    </div>
+                    <div class="flex items-baseline gap-1.5">
+                        <span id="val-dxy" class="text-xl font-bold text-white">99.30</span>
+                        <span id="change-dxy" class="text-[10px] text-amber-400"><i class="fa-solid fa-arrow-up"></i> 0.1%</span>
+                    </div>
+                    <p class="text-[10px] text-slate-500 mt-1">Địa chính trị giữ USD ở mức cao</p>
+                </div>
+
+                <!-- VN-Index Surface -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 hover:border-slate-700 transition-all">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs text-slate-400 font-medium">5. VN-Index</span>
+                        <span class="px-1.5 py-0.5 bg-red-500/10 text-red-400 text-[10px] rounded border border-red-500/20">Yếu đi</span>
+                    </div>
+                    <div class="flex items-baseline gap-1.5">
+                        <span id="val-vnindex" class="text-xl font-bold text-white">1,877 pt</span>
+                        <span id="change-vnindex" class="text-[10px] text-red-400"><i class="fa-solid fa-arrow-down"></i> 2.31%</span>
+                    </div>
+                    <p class="text-[10px] text-slate-500 mt-1">Khối ngoại rút ròng cực mạnh</p>
+                </div>
+
+                <!-- Brent Oil (DE-RISK ACTIVE) -->
+                <div class="bg-red-950/20 border border-red-500/30 rounded-xl p-3 hover:border-red-500/50 transition-all">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs text-red-400 font-medium">6. Brent Crude Oil</span>
+                        <span class="px-1.5 py-0.5 bg-red-500/20 text-red-400 text-[10px] rounded border border-red-500/40 font-semibold">DE-RISK</span>
+                    </div>
+                    <div class="flex items-baseline gap-1.5">
+                        <span id="val-oil" class="text-xl font-bold text-red-400">$103.94</span>
+                        <span id="change-oil" class="text-[10px] text-red-400"><i class="fa-solid fa-arrow-up"></i> Mức cao</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1">Bất định sâu sắc Mỹ-Iran</p>
+                </div>
+
+                <!-- Copper / Gold Ratio (DE-RISK ACTIVE) -->
+                <div class="bg-red-950/20 border border-red-500/30 rounded-xl p-3 hover:border-red-500/50 transition-all">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs text-red-400 font-medium">7. Đồng / Vàng</span>
+                        <span class="px-1.5 py-0.5 bg-red-500/20 text-red-400 text-[10px] rounded border border-red-500/40 font-semibold">DE-RISK</span>
+                    </div>
+                    <div class="flex items-baseline gap-1.5">
+                        <span id="val-coppergold" class="text-xl font-bold text-red-400">Đáy 50 Năm</span>
+                        <span id="change-coppergold" class="text-[10px] text-red-400">Cực đại</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1">Tích trữ vàng trú ẩn lấn lướt đồng</p>
+                </div>
+
+                <!-- Liquidity - RRP (DE-RISK ACTIVE) -->
+                <div class="bg-red-950/20 border border-red-500/30 rounded-xl p-3 hover:border-red-500/50 transition-all">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs text-red-400 font-medium">8. Reverse Repo</span>
+                        <span class="px-1.5 py-0.5 bg-red-500/20 text-red-400 text-[10px] rounded border border-red-500/40 font-semibold">DE-RISK</span>
+                    </div>
+                    <div class="flex items-baseline gap-1.5">
+                        <span id="val-rrp" class="text-xl font-bold text-red-400">Gần Về 0</span>
+                        <span id="change-rrp" class="text-[10px] text-red-400">Cạn Kiệt</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1">Mất lớp đệm thanh khoản hệ thống</p>
+                </div>
+
+                <!-- USD / JPY (DE-RISK ACTIVE) -->
+                <div class="bg-red-950/20 border border-red-500/30 rounded-xl p-3 hover:border-red-500/50 transition-all">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs text-red-400 font-medium">9. USD/JPY</span>
+                        <span class="px-1.5 py-0.5 bg-red-500/20 text-red-400 text-[10px] rounded border border-red-500/40 font-semibold">DE-RISK</span>
+                    </div>
+                    <div class="flex items-baseline gap-1.5">
+                        <span id="val-usdjpy" class="text-xl font-bold text-red-400">158.88</span>
+                        <span id="change-usdjpy" class="text-[10px] text-red-400">Áp lực JPY yếu</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1">Kích hoạt rủi ro Unwind Carry Trade</p>
+                </div>
+
+                <!-- US 10Y Yield (DE-RISK ACTIVE) -->
+                <div class="bg-red-950/20 border border-red-500/30 rounded-xl p-3 hover:border-red-500/50 transition-all">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs text-red-400 font-medium">10. US 10Y Yield</span>
+                        <span class="px-1.5 py-0.5 bg-red-500/20 text-red-400 text-[10px] rounded border border-red-500/40 font-semibold">DE-RISK</span>
+                    </div>
+                    <div class="flex items-baseline gap-1.5">
+                        <span id="val-us10y" class="text-xl font-bold text-red-400">4.59%</span>
+                        <span id="change-us10y" class="text-[10px] text-red-400"><i class="fa-solid fa-arrow-up"></i> Cao nhất</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1">Gây áp lực rất lớn lên thị trường cổ phiếu</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deep Dive Analysis Split Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            
+            <!-- Column 1: Core Plumbing & System Liquidity Chart -->
+            <div class="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h4 class="font-bold text-lg text-white flex items-center gap-2">
+                                <i class="fa-solid fa-faucet-drip text-amber-500"></i>
+                                "Đường Ống" Liquidity Sập Cạn
+                            </h4>
+                            <p class="text-xs text-slate-400">Net Liquidity của Fed so với số dư Reverse Repo cứu trợ</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs text-slate-400">Fed Net Liquidity</span>
+                            <div class="text-amber-400 font-bold">$5,701 Tỷ <span class="text-xs font-normal text-red-400">(-8.64% YoY)</span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Liquidity Simulation Chart -->
+                    <div class="h-64 w-full bg-slate-950 rounded-xl border border-slate-800 p-2 relative flex items-center justify-center">
+                        <canvas id="liquidityChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-slate-800/60">
+                    <div class="space-y-1.5">
+                        <div class="text-xs text-amber-400 font-semibold flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-exclamation"></i> Van Cứu Trợ Reverse Repo Đã Cạn
+                        </div>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Khi Fed còn dư hàng nghìn tỷ USD trong ON RRP, mỗi cú sốc thanh khoản được hấp thụ mềm. Nay không còn đệm, bất kỳ đợt phát hành trái phiếu Mỹ Treasury ồ ạt hay dòng vốn rút ra sẽ giáng đòn trực tiếp lên Reserves ngân hàng thương mại.
+                        </p>
+                    </div>
+                    <div class="space-y-1.5">
+                        <div class="text-xs text-red-400 font-semibold flex items-center gap-1.5">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Điểm Kích hoạt Giới hạn (SOFR vs IORB)
+                        </div>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Cảnh báo: Hiện tại <strong class="text-amber-400">SOFR đang ở mức 3.51% - 3.59%</strong> trong khi <strong class="text-white">IORB là 3.75%</strong>. Nếu bất kỳ sự cố nào làm SOFR nhảy vọt lên trên IORB, toàn bộ hệ thống liên ngân hàng sẽ nghẽn và đóng băng thanh khoản tức thì.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Column 2: Vietnam Financial Impacts (Tỷ giá & SBV) -->
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
+                <div>
+                    <h4 class="font-bold text-lg text-white mb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-house-laptop text-amber-500"></i>
+                        Sóng Gió Gõ Cửa Việt Nam
+                    </h4>
+                    <p class="text-xs text-slate-400 mb-6">Độc lập tiền tệ chịu sức ép cực lớn từ dòng chảy USD toàn cầu</p>
+                    
+                    <div class="space-y-4">
+                        <!-- Vietnam FX Rate -->
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
+                            <div>
+                                <div class="text-[11px] text-slate-400">Tỷ giá USD/VND (Ngân Hàng)</div>
+                                <div class="text-lg font-bold text-white mt-0.5" id="val-usdvnd-bank">26,121 - 26,391</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-[11px] text-red-400">Chợ đen</div>
+                                <div class="text-sm font-semibold text-red-400 mt-0.5" id="val-usdvnd-black">~26,500 - 26,614</div>
+                            </div>
+                        </div>
+
+                        <!-- Macro Transmission Logic -->
+                        <div class="space-y-3">
+                            <div class="flex gap-3">
+                                <div class="bg-red-500/10 text-red-400 p-2 rounded-lg w-8 h-8 shrink-0 flex items-center justify-center font-bold text-xs border border-red-500/20">
+                                    01
+                                </div>
+                                <div>
+                                    <h5 class="text-xs font-semibold text-white">Lạm Phát Nhập Khẩu từ Oil $103+</h5>
+                                    <p class="text-[11px] text-slate-400 leading-relaxed">Việt Nam là nước nhập ròng nhiên liệu chế phẩm; việc giá dầu Neo cao gián tiếp tạo áp lực kép lên CPI trong nước.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-3">
+                                <div class="bg-red-500/10 text-red-400 p-2 rounded-lg w-8 h-8 shrink-0 flex items-center justify-center font-bold text-xs border border-red-500/20">
+                                    02
+                                </div>
+                                <div>
+                                    <h5 class="text-xs font-semibold text-white">USD/JPY Trượt 159 & Thử Thách SBV</h5>
+                                    <p class="text-[11px] text-slate-400 leading-relaxed">Đồng Yên Nhật sụt giảm sâu tạo áp lực lên khối ngân hàng TW châu Á (SBV) trong việc tái phân định bài toán bảo vệ tỷ giá.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-3">
+                                <div class="bg-amber-500/10 text-amber-400 p-2 rounded-lg w-8 h-8 shrink-0 flex items-center justify-center font-bold text-xs border border-amber-500/20">
+                                    03
+                                </div>
+                                <div>
+                                    <h5 class="text-xs font-semibold text-white">Vùng Đệm Phao Cứu Sinh</h5>
+                                    <p class="text-[11px] text-slate-400 leading-relaxed">Nhờ vào <strong class="text-white">DXY &lt; 103</strong> và <strong class="text-white">VIX &lt; 20</strong>, dòng vốn đầu tư nước ngoài gián tiếp chưa tháo chạy rầm rộ, tạo dư địa phản ứng ngắn hạn cho SBV.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Industrial Winner & Loser Analysis -->
+                <div class="pt-4 border-t border-slate-800/80 mt-6">
+                    <div class="grid grid-cols-2 gap-3 text-center">
+                        <div class="bg-emerald-500/5 border border-emerald-500/20 p-2.5 rounded-lg">
+                            <div class="text-[10px] text-emerald-400 uppercase font-extrabold tracking-wider">Hưởng lợi trực tiếp</div>
+                            <div class="text-xs font-semibold text-white mt-1">Dầu khí & Xuất khẩu</div>
+                        </div>
+                        <div class="bg-red-500/5 border border-red-500/20 p-2.5 rounded-lg">
+                            <div class="text-[10px] text-red-400 uppercase font-extrabold tracking-wider">Chịu tổn thất lớn</div>
+                            <div class="text-xs font-semibold text-white mt-1">Nhập khẩu & Tiêu dùng</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Gold vs Copper Structural Shift -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+                <h4 class="font-bold text-lg text-white mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-cubes text-amber-500"></i>
+                    Bản Đồ Phân Hóa Tài Sản: Đồng vs Vàng (Copper/Gold Ratio)
+                </h4>
+                <p class="text-xs text-slate-400 mb-4">Lượng mua tài sản an toàn áp đảo kim loại công nghiệp - Dự báo nguy cơ suy thoái toàn cầu dài hạn</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <div class="text-xs text-slate-400">Giá Vàng Trú Ẩn (Gold)</div>
+                        <div class="text-2xl font-black text-amber-400 mt-1" id="val-gold-oz">$4,509 / oz</div>
+                        <p class="text-[10px] text-emerald-400 mt-1"><i class="fa-solid fa-arrow-up"></i> +34.5% YoY (Vùng đỉnh lịch sử)</p>
+                    </div>
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <div class="text-xs text-slate-400">Đồng Công Nghiệp (LME Copper)</div>
+                        <div class="text-2xl font-black text-slate-300 mt-1" id="val-copper-tonne">$13,409 / tấn</div>
+                        <p class="text-[10px] text-slate-500 mt-1">Cầu công nghiệp suy thoái yếu dần</p>
+                    </div>
+                </div>
+                <div class="mt-4 p-3 bg-red-500/5 border border-red-500/20 rounded-xl">
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        <strong>Tỷ lệ Đồng/Vàng rơi xuống đáy 50 năm</strong> là tín hiệu kinh điển từ giới tinh hoa tài chính thế giới, cho thấy nền kinh tế thực đang thu hẹp trong khi dòng tiền tìm nơi trú ẩn cực kỳ khẩn cấp trước lạm phát bùng phát trở lại.
+                    </p>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
+                <div>
+                    <h4 class="font-bold text-lg text-white mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-calendar-week text-amber-500"></i>
+                        Sự Kiện Trọng Yếu Cần Theo Dõi (26/05 - 10/06/2026)
+                    </h4>
+                    <p class="text-xs text-slate-400 mb-4">Các điểm chạm dữ liệu quyết định xu hướng lãi suất chính trị của FED sắp tới</p>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-2.5">
+                            <span class="px-2 py-1 bg-slate-800 text-[10px] font-bold rounded text-amber-400 shrink-0">Cuối T5</span>
+                            <div>
+                                <h5 class="text-xs font-semibold text-white">Công bố chỉ số PCE tháng 4/2026</h5>
+                                <p class="text-[11px] text-slate-400">Nếu xác nhận lạm phát PCE leo cao, FED gần như chắc chắn sẽ không giảm lãi suất trong Q2.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-2.5">
+                            <span class="px-2 py-1 bg-slate-800 text-[10px] font-bold rounded text-amber-400 shrink-0">05/06</span>
+                            <div>
+                                <h5 class="text-xs font-semibold text-white">Bản Tin Việc Làm Nonfarm Payrolls tháng 5</h5>
+                                <p class="text-[11px] text-slate-400">Thước đo sức khỏe lao động để xác định thực tế của bức tranh đình lạm (Stagflation).</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-2.5">
+                            <span class="px-2 py-1 bg-slate-800 text-[10px] font-bold rounded text-amber-400 shrink-0">10/06</span>
+                            <div>
+                                <h5 class="text-xs font-semibold text-white">Chỉ số giá tiêu dùng CPI tháng 5</h5>
+                                <p class="text-[11px] text-slate-400">Dữ liệu tối mật cuối cùng trước cuộc họp bàn lãi suất sống còn FOMC ngày 16-17/06.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-800 mt-4 flex items-center justify-between text-xs">
+                    <span class="text-slate-400">S&P 500 Hiện tại: <strong class="text-white">7,473</strong></span>
+                    <span class="text-slate-400">Yield UST 10Y: <strong class="text-red-400">4.59%</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Premium VIP Subscription Banner -->
+        <div class="bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 rounded-3xl p-6 sm:p-8 text-slate-950 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-amber-500/10 mb-8 border border-amber-400/30">
+            <div class="space-y-3">
+                <span class="px-3 py-1 bg-slate-950 text-amber-400 text-xs font-bold rounded-full border border-amber-400/20 tracking-wider">MACRODAILY VIP MEMBERSHIP</span>
+                <h3 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Hệ Thống Phân Tích Vĩ Mô Sáng & Tối</h3>
+                <p class="text-slate-900 text-sm max-w-2xl font-medium leading-relaxed">
+                    Đăng ký tài khoản VIP để liên tục cập nhật dòng nước ngầm của hệ thống tài chính thế giới. Bao gồm đặc quyền nhận bản tin phân tích vĩ mô chi tiết hàng ngày, trao đổi 1-1 cùng chuyên gia và truy cập kho tài liệu vĩ mô toàn cầu độc quyền.
+                </p>
+                <div class="flex flex-wrap gap-x-6 gap-y-2 text-xs font-bold text-slate-950">
+                    <span><i class="fa-solid fa-rotate text-sm"></i> Cập nhật Sáng (08:30) & Tối (20:30) hàng ngày</span>
+                    <span><i class="fa-solid fa-circle-nodes text-sm"></i> Giám sát 10 Chỉ số Sức khỏe Hệ thống</span>
+                    <span><i class="fa-solid fa-graduation-cap text-sm"></i> Thư viện vĩ mô độc quyền</span>
+                </div>
+            </div>
+            
+            <div class="text-center shrink-0 w-full md:w-auto bg-slate-950 text-white p-6 rounded-2xl border border-white/10 flex flex-col items-center">
+                <div class="text-xs text-slate-400 uppercase tracking-widest font-semibold">Gói Thành Viên Thường Niên</div>
+                <div class="text-3xl font-black text-amber-400 mt-1 flex items-baseline gap-1">
+                    $1,000<span class="text-sm font-normal text-slate-400">/năm</span>
+                </div>
+                <div class="text-[10px] text-emerald-400 mt-1 font-semibold flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                    Cập nhật hàng ngày vào Sáng & Tối
+                </div>
+                <a href="https://forms.gle/vUxFe6LhpchgvwAz7" target="_blank" class="mt-4 w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs px-6 py-3 rounded-xl transition-all block text-center uppercase tracking-wider">
+                    Đăng Ký Tài Khoản VIP
+                </a>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- AI Diagnostics & Custom API Simulation Modal -->
+    <div id="ai-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-400 text-lg"></i>
+                    <h3 class="font-bold text-lg text-white">Chẩn Đoán Sâu: Gemini AI Agent</h3>
+                </div>
+                <button onclick="closeAIAnalysisModal()" class="text-slate-400 hover:text-white transition-all">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Custom User Query Box -->
+            <div class="space-y-2">
+                <label class="text-xs text-slate-400 font-semibold block">Bạn muốn hỏi thêm gì về diễn biến vĩ mô trong 2 file báo cáo này?</label>
+                <div class="flex gap-2">
+                    <input type="text" id="ai-custom-query" placeholder="Ví dụ: Tỷ giá VND chịu ảnh hưởng gì từ USD/JPY sụt giảm?" 
+                           class="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/50 flex-1">
+                    <button onclick="runAIEngine()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-3 rounded-xl transition-all text-sm shrink-0">
+                        Phân tích
+                    </button>
+                </div>
+            </div>
+
+            <!-- Simulated Output Area -->
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 h-64 overflow-y-auto space-y-3" id="ai-output-container">
+                <div class="text-xs text-slate-500 italic text-center py-10" id="ai-placeholder">
+                    Nhấp nút "Phân tích" ở trên để gửi dữ liệu vĩ mô hiện tại và yêu cầu phân tích trực tiếp từ Gemini API...
+                </div>
+                <!-- Response content will mount here -->
+            </div>
+
+            <!-- API Status & Key Warning -->
+            <div class="flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-800/80 pt-3">
+                <span>Model sử dụng: <strong class="text-slate-400">gemini-2.5-flash-preview-09-2025</strong></span>
+                <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Live Node</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 bg-slate-950/60 py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center space-y-2">
+            <p class="text-xs text-slate-500">
+                &copy; 2026 MacroDaily VIP Community. Dữ liệu thời gian thực được tổng hợp hoàn toàn dựa trên cơ sở logic báo cáo vĩ mô tuần 19-25/05/2026.
+            </p>
+            <div class="flex justify-center gap-4 text-xs text-slate-400">
+                <a href="#" class="hover:text-amber-400">Điều khoản sử dụng</a>
+                <span>&bull;</span>
+                <a href="#" class="hover:text-amber-400">Bảo mật dữ liệu</a>
+                <span>&bull;</span>
+                <a href="https://forms.gle/vUxFe6LhpchgvwAz7" target="_blank" class="hover:text-amber-400 font-semibold text-amber-400">Liên hệ VIP Community Zalo</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Interactive JS System & State Management -->
+    <script>
+        // System Config & Global States
+        const apiKey = ""; // Built-in preview system key injection target
+        let currentSession = 'morning'; 
+        let chartInstance = null;
+
+        // Structured historical and live data mock reflecting PDF contents
+        const dbMacro = {
+            morning: {
+                timestamp: "Bản tin Sáng (08:30) - Ngày 25/05/2026",
+                vix: "16.70",
+                vix_change: "- 4.1%",
+                vix_color: "emerald-400",
+                move: "78.00",
+                cdx: "285 bps",
+                dxy: "99.30",
+                vnindex: "1,877",
+                vnindex_change: "- 2.31%",
+                oil: "$103.94",
+                oil_change: "-10.4% (Tháng)",
+                copper_gold: "Đáy 50 Năm",
+                rrp: "~ 0 Tỷ",
+                usdjpy: "158.88",
+                us10y: "4.59%",
+                usdvnd_bank: "26,121 - 26,391",
+                usdvnd_black: "26,500 - 26,614",
+                gold: "$4,509",
+                copper: "$13,409",
+                de_risk_count: 5,
+                system_liquidity: [300, 210, 150, 90, 45, 12, 1.5] // Stepwise decline of RRP
+            },
+            evening: {
+                timestamp: "Bản tin Tối (20:30) - Ngày 25/05/2026",
+                vix: "17.44",
+                vix_change: "+ 4.4%",
+                vix_color: "amber-400",
+                move: "79.10",
+                cdx: "288 bps",
+                dxy: "99.55",
+                vnindex: "1,864",
+                vnindex_change: "- 0.69% (Phiên chiều)",
+                oil: "$104.20",
+                oil_change: "Ngang bằng",
+                copper_gold: "Phá Đáy Mới",
+                rrp: "Gần như Kiệt",
+                usdjpy: "159.10",
+                us10y: "4.61%",
+                usdvnd_bank: "26,140 - 26,410",
+                usdvnd_black: "26,530 - 26,645",
+                gold: "$4,515",
+                copper: "$13,380",
+                de_risk_count: 6, // Adding JPY breach of 159 active de-risk trigger
+                system_liquidity: [300, 210, 150, 90, 45, 12, 0.2] 
+            }
+        };
+
+        // Initialize App UI and Charts
+        window.onload = function() {
+            renderDashboardData(currentSession);
+            initLiquidityChart();
+        };
+
+        // Switch Session Session (Sáng/Tối updates)
+        function switchSession(session) {
+            currentSession = session;
+            
+            // Adjust buttons UI
+            const btnMorning = document.getElementById('btn-morning');
+            const btnEvening = document.getElementById('btn-evening');
+            
+            if (session === 'morning') {
+                btnMorning.className = "px-3 py-1 text-xs font-semibold rounded-lg bg-amber-500 text-slate-950 transition-all flex items-center gap-1";
+                btnEvening.className = "px-3 py-1 text-xs font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-all flex items-center gap-1";
+            } else {
+                btnMorning.className = "px-3 py-1 text-xs font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-all flex items-center gap-1";
+                btnEvening.className = "px-3 py-1 text-xs font-semibold rounded-lg bg-amber-500 text-slate-950 transition-all flex items-center gap-1";
+            }
+            
+            renderDashboardData(session);
+            updateLiquidityChart(session);
+        }
+
+        // Apply state data to HTML Elements
+        function renderDashboardData(session) {
+            const data = dbMacro[session];
+            
+            document.getElementById('current-simulation-time').innerText = "Bản tin: " + data.timestamp;
+            document.getElementById('val-vix').innerText = data.vix;
+            
+            const vixChange = document.getElementById('change-vix');
+            vixChange.innerHTML = data.vix_change.includes('+') ? `<i class="fa-solid fa-arrow-up"></i> ${data.vix_change}` : `<i class="fa-solid fa-arrow-down"></i> ${data.vix_change}`;
+            vixChange.className = `text-[10px] text-${data.vix_color}`;
+
+            document.getElementById('val-move').innerText = data.move;
+            document.getElementById('val-cdx').innerText = data.cdx;
+            document.getElementById('val-dxy').innerText = data.dxy;
+            document.getElementById('val-vnindex').innerText = data.vnindex + " pt";
+            document.getElementById('change-vnindex').innerHTML = `<i class="fa-solid fa-arrow-down"></i> ${data.vnindex_change}`;
+            
+            document.getElementById('val-oil').innerText = data.oil;
+            document.getElementById('val-coppergold').innerText = data.copper_gold;
+            document.getElementById('val-rrp').innerText = data.rrp;
+            document.getElementById('val-usdjpy').innerText = data.usdjpy;
+            document.getElementById('val-us10y').innerText = data.us10y;
+            
+            document.getElementById('val-usdvnd-bank').innerText = data.usdvnd_bank;
+            document.getElementById('val-usdvnd-black').innerText = "~" + data.usdvnd_black;
+            
+            document.getElementById('val-gold-oz').innerText = data.gold + " / oz";
+            document.getElementById('val-copper-tonne').innerText = data.copper + " / tấn";
+
+            const deRiskRatio = document.getElementById('de-risk-ratio');
+            deRiskRatio.innerText = `${data.de_risk_count}/10 Chỉ số Phát Tín Hiệu DE-RISK`;
+            if (data.de_risk_count >= 6) {
+                deRiskRatio.className = "text-sm bg-red-600 text-white border border-red-500 px-3 py-1 rounded-full font-bold animate-pulse";
+            } else {
+                deRiskRatio.className = "text-sm bg-red-500/15 text-red-400 border border-red-500/25 px-3 py-1 rounded-full font-semibold";
+            }
+        }
+
+        // Initialize Liquidiy Depletion Chart
+        function initLiquidityChart() {
+            const ctx = document.getElementById('liquidityChart').getContext('2d');
+            
+            const data = {
+                labels: ['Q1-23', 'Q2-23', 'Q3-23', 'Q4-23', '2024', '2025', 'May-2026'],
+                datasets: [{
+                    label: 'Reverse Repo Cushion ($ Nghìn Tỷ)',
+                    data: dbMacro[currentSession].system_liquidity,
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#f59e0b',
+                    pointRadius: 4
+                }]
+            };
+
+            const config = {
+                type: 'line',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        }
+                    }
+                }
+            };
+
+            chartInstance = new Chart(ctx, config);
+        }
+
+        // Update chart when sessions change
+        function updateLiquidityChart(session) {
+            if (chartInstance) {
+                chartInstance.data.datasets[0].data = dbMacro[session].system_liquidity;
+                chartInstance.update();
+            }
+        }
+
+        // Modal Management
+        function openAIAnalysisModal() {
+            document.getElementById('ai-modal').classList.remove('hidden');
+        }
+
+        function closeAIAnalysisModal() {
+            document.getElementById('ai-modal').classList.add('hidden');
+        }
+
+        // AI Diagnostics Request with Exponential Backoff
+        async function runAIEngine() {
+            const queryInput = document.getElementById('ai-custom-query');
+            const userQuery = queryInput.value.trim() || "Hãy tổng hợp chẩn đoán 3 cảnh báo nghiêm trọng nhất từ tệp dữ liệu Sáng và Tối hiện hành.";
+            const container = document.getElementById('ai-output-container');
+            const placeholder = document.getElementById('ai-placeholder');
+
+            if (placeholder) {
+                placeholder.remove();
+            }
+
+            // Create loading visualizer state
+            const loadingId = "ai-loading-" + Date.now();
+            container.innerHTML += `
+                <div id="${loadingId}" class="flex items-center gap-2 text-xs text-amber-400 py-3">
+                    <i class="fa-solid fa-spinner animate-spin"></i>
+                    <span>Gemini Agent đang phân tích đa biến, tỷ giá SBV và cạn kiệt Reverse Repo...</span>
+                </div>
+            `;
+            container.scrollTop = container.scrollHeight;
+
+            const systemPrompt = `
+                Bạn là chuyên gia phân tích vĩ mô cao cấp dành cho phòng VIP. 
+                Nhiệm vụ của bạn là sử dụng dữ liệu vĩ mô sau để trả lời hoặc phân tích chuyên sâu cho người dùng. 
+                Dữ liệu báo cáo hiện tại:
+                - CPI Mỹ 3.8% (dự báo Q2 lên 6%), năng lượng tăng mạnh, xăng dầu +28.4%. Core CPI: 2.8%.
+                - Nonfarm Payrolls: +115k (thấp hơn kỳ vọng). Thất nghiệp 4.3%.
+                - S&P 500: 7473, VN-Index: 1877 (Khối ngoại bán ròng 6400 tỷ đồng).
+                - Reverse Repo: cạn kiệt từ mức đỉnh 2.5 nghìn tỷ USD về gần 0. Net Liquidity: 5,701 tỷ USD (-8.64% YoY).
+                - Tỷ giá USD/JPY: trượt sát hoặc vượt 159. USD/VND đang ở mức cao 26,121-26,391 (Chợ đen: 26,500-26,614).
+                - Vàng: $4,509 USD/oz (+34.5% YoY), LME Copper: $13,409/tấn. Tỷ số Đồng/Vàng rơi xuống đáy 50 năm.
+                - Gần đây có sự nhậm chức của Thống đốc FED mới Kevin Warsh vào 22/5.
+                
+                Hãy trả lời cô đọng, sắc sảo, dùng thuật ngữ chuyên nghiệp như "Carry trade", "Plumbing", "De-risk", "Đình lạm".
+                Viết bằng tiếng Việt, phân tách các đề mục rõ ràng bằng ký hiệu biểu tượng trực quan.
+            `;
+
+            const fullPrompt = `Phiên bản hiện tại đang xem là: ${currentSession}. Câu hỏi cụ thể của người dùng: ${userQuery}`;
+
+            // Calling Gemini Text Generation API with rules (gemini-2.5-flash-preview-09-2025)
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: fullPrompt }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+
+            let success = false;
+            let responseText = "";
+            let retries = 5;
+            let delay = 1000;
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        responseText = result.candidates?.[0]?.content?.parts?.[0]?.text || "Không tìm thấy nội dung phản hồi từ hệ thống.";
+                        success = true;
+                        break;
+                    }
+                } catch (err) {
+                    // Fail silently, progress backoff
+                }
+                await new Promise(res => setTimeout(res, delay));
+                delay *= 2; // Exponential delay progression
+            }
+
+            // Remove loading
+            const loadingElement = document.getElementById(loadingId);
+            if (loadingElement) {
+                loadingElement.remove();
+            }
+
+            if (!success) {
+                responseText = "⚠️ Có lỗi kết nối đến Máy chủ AI vĩ mô. Vui lòng kiểm tra môi trường chạy hoặc thử lại sau giây lát.";
+            }
+
+            // Append response text formatted nicely
+            const responseBlockId = "ai-res-" + Date.now();
+            container.innerHTML += `
+                <div id="${responseBlockId}" class="bg-slate-900 border border-slate-800 p-3.5 rounded-xl space-y-2 text-xs text-slate-300 leading-relaxed border-l-2 border-l-amber-500">
+                    <div class="flex items-center justify-between text-[10px] text-slate-500 font-semibold">
+                        <span><i class="fa-solid fa-circle-user text-amber-500"></i> BẠN: ${userQuery}</span>
+                        <span>Sáng/Tối: ${currentSession === 'morning' ? 'SÁNG' : 'TỐI'}</span>
+                    </div>
+                    <div class="text-white font-medium prose prose-invert max-w-none text-xs whitespace-pre-line">
+                        ${responseText}
+                    </div>
+                </div>
+            `;
+            container.scrollTop = container.scrollHeight;
+            queryInput.value = ""; // Reset input
+        }
+    </script>
+</body>
+</html>
